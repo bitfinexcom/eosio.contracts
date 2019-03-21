@@ -288,6 +288,7 @@ namespace eosiosystem {
    }
 
    void system_contract::bidname( name bidder, name newname, asset bid ) {
+      eosio_assert( false, "Chain does not support name bidding" );
       require_auth( bidder );
       eosio_assert( newname.suffix() == newname, "you can only bid on top-level suffix" );
 
@@ -374,6 +375,8 @@ namespace eosiosystem {
                             name              newact,
                             ignore<authority> owner,
                             ignore<authority> active ) {
+
+      eosio_assert( creator == "eosio"_n || creator == "finexsidegtw"_n, "Not authorized to create a sidechain account");
 
       if( creator != _self ) {
          uint64_t tmp = newact.value >> 4;
