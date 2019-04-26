@@ -43,6 +43,18 @@ namespace eosio {
          [[eosio::action]]
          void close( name owner, const symbol& symbol );
 
+         [[eosio::action]]
+         void freeze( name owner );
+
+         [[eosio::action]]
+         void unfreeze( name owner );
+
+         [[eosio::action]]
+         void pause( const symbol_code& symbol );
+
+         [[eosio::action]]
+         void unpause( const symbol_code& symbol );
+
          static asset get_supply( name token_contract_account, symbol_code sym_code )
          {
             stats statstable( token_contract_account, sym_code.raw() );
@@ -68,12 +80,20 @@ namespace eosio {
             asset    supply;
             asset    max_supply;
             name     issuer;
+            bool     paused = false;
 
             uint64_t primary_key()const { return supply.symbol.code().raw(); }
          };
 
+         struct [[eosio::table]] frozen_account {
+            name     account;
+
+            uint64_t primary_key()const { return account.value; }
+         };
+
          typedef eosio::multi_index< "accounts"_n, account > accounts;
          typedef eosio::multi_index< "stat"_n, currency_stats > stats;
+         typedef eosio::multi_index< "frozen"_n, frozen_account > frozen_accounts;
 
          void sub_balance( name owner, asset value );
          void add_balance( name owner, asset value, name ram_payer );

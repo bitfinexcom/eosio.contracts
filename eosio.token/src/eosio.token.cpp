@@ -105,6 +105,7 @@ void token::transfer( name    from,
     eosio_assert( quantity.amount > 0, "must transfer positive quantity" );
     eosio_assert( quantity.symbol == st.supply.symbol, "symbol precision mismatch" );
     eosio_assert( memo.size() <= 256, "memo has more than 256 bytes" );
+    eosio_assert( st.paused == false, "token is paused" );
 
     auto payer = has_auth( to ) ? to : from;
 
@@ -117,6 +118,10 @@ void token::sub_balance( name owner, asset value ) {
 
    const auto& from = from_acnts.get( value.symbol.code().raw(), "no balance object found" );
    eosio_assert( from.balance.amount >= value.amount, "overdrawn balance" );
+
+   frozen_accounts _frozen_accounts(_self, _self.value);
+   auto fitr = _frozen_accounts.find( owner.value );
+   eosio_assert( fitr == _frozen_accounts.end(), "account is frozen");
 
    from_acnts.modify( from, owner, [&]( auto& a ) {
       a.balance -= value;
@@ -141,6 +146,10 @@ void token::add_balance( name owner, asset value, name ram_payer )
         a.balance += value;
       });
    }
+
+   frozen_accounts _frozen_accounts(_self, _self.value);
+   auto fitr = _frozen_accounts.find( owner.value );
+   eosio_assert( fitr == _frozen_accounts.end(), "account is frozen");
 
    // Handle special RAM toke case
    if( value.symbol == symbol("RAM",8) ) {
@@ -177,6 +186,58 @@ void token::close( name owner, const symbol& symbol )
    acnts.erase( it );
 }
 
+void token::freeze( name account )
+{
+   require_auth( _self );
+
+   frozen_accounts _frozen_accounts(_self, _self.value);
+   auto fitr = _frozen_accounts.find( account.value );
+   eosio_assert( fitr == _frozen_accounts.end(), "account already freezed");
+
+   _frozen_accounts.emplace( _self, [&]( auto& fa ) {
+      fa.account = account;
+   });
+}
+
+void token::unfreeze( name account )
+{
+   require_auth( _self );
+
+   frozen_accounts _frozen_accounts(_self, _self.value);
+   auto fitr = _frozen_accounts.find( account.value );
+   eosio_assert( fitr != _frozen_accounts.end(), "account not freezed");
+
+   _frozen_accounts.erase(fitr);
+}
+
+void token::pause( const symbol_code& sym )
+{
+   require_auth( _self );
+
+   stats statstable( _self, sym.raw() );
+   const auto& st = statstable.get( sym.raw() );
+
+   eosio_assert( st.paused == false, "token already paused" );
+
+   statstable.modify( st, same_payer, [&]( auto& s ) {
+      s.paused = true;
+   });
+}
+
+void token::unpause( const symbol_code& sym )
+{
+   require_auth( _self );
+
+   stats statstable( _self, sym.raw() );
+   const auto& st = statstable.get( sym.raw() );
+
+   eosio_assert( st.paused == true, "token not paused" );
+
+   statstable.modify( st, same_payer, [&]( auto& s ) {
+      s.paused = false;
+   });
+}
+
 } /// namespace eosio
 
-EOSIO_DISPATCH( eosio::token, (create)(issue)(transfer)(open)(close)(retire) )
+EOSIO_DISPATCH( eosio::token, (create)(issue)(transfer)(open)(close)(retire)(freeze)(unfreeze)(pause)(unpause) )
