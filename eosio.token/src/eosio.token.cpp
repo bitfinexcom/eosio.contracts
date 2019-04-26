@@ -14,6 +14,7 @@ void token::create( name   issuer,
 
     auto sym = maximum_supply.symbol;
     eosio_assert( sym.is_valid(), "invalid symbol name" );
+    eosio_assert( sym.precision() == 8, "invalid precision");
     eosio_assert( maximum_supply.is_valid(), "invalid supply");
     eosio_assert( maximum_supply.amount > 0, "max-supply must be positive");
 
