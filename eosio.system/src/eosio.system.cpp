@@ -55,6 +55,7 @@ namespace eosiosystem {
    }
 
    void system_contract::setram( uint64_t max_ram_size ) {
+      eosio_assert( false, "Chain does not support setram" );
       require_auth( _self );
 
       eosio_assert( _gstate.max_ram_size < max_ram_size, "ram may only be increased" ); /// decreasing ram might result market maker issues
@@ -100,6 +101,7 @@ namespace eosiosystem {
     *  be allocated at the old rate up to the present block before switching the rate.
     */
    void system_contract::setramrate( uint16_t bytes_per_block ) {
+      eosio_assert( false, "Chain does not support setramrate" );
       require_auth( _self );
 
       update_ram_supply();
