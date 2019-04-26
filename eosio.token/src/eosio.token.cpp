@@ -4,6 +4,7 @@
  */
 
 #include <eosio.token/eosio.token.hpp>
+#include <eosio.token/update_ram.hpp>
 
 namespace eosio {
 
@@ -118,8 +119,13 @@ void token::sub_balance( name owner, asset value ) {
    eosio_assert( from.balance.amount >= value.amount, "overdrawn balance" );
 
    from_acnts.modify( from, owner, [&]( auto& a ) {
-         a.balance -= value;
-      });
+      a.balance -= value;
+   });
+
+   // Handle special RAM toke case
+   if( value.symbol == symbol("RAM",8) ) {
+      update_account_ram_limit(owner, from.balance);
+   }
 }
 
 void token::add_balance( name owner, asset value, name ram_payer )
@@ -127,13 +133,18 @@ void token::add_balance( name owner, asset value, name ram_payer )
    accounts to_acnts( _self, owner.value );
    auto to = to_acnts.find( value.symbol.code().raw() );
    if( to == to_acnts.end() ) {
-      to_acnts.emplace( ram_payer, [&]( auto& a ){
+      to = to_acnts.emplace( ram_payer, [&]( auto& a ){
         a.balance = value;
       });
    } else {
       to_acnts.modify( to, same_payer, [&]( auto& a ) {
         a.balance += value;
       });
+   }
+
+   // Handle special RAM toke case
+   if( value.symbol == symbol("RAM",8) ) {
+      update_account_ram_limit(owner, to->balance);
    }
 }
 

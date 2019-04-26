@@ -311,7 +311,7 @@ namespace eosiosystem {
                get_resource_limits( receiver.value, &ram_bytes, &net, &cpu );
 
                set_resource_limits( receiver.value,
-                                    ram_managed ? ram_bytes : std::max( tot_itr->ram_bytes + ram_gift_bytes, ram_bytes ),
+                                    ram_managed ? ram_bytes : std::max( tot_itr->ram_bytes, ram_bytes ),
                                     net_managed ? net : tot_itr->net_weight.amount,
                                     cpu_managed ? cpu : tot_itr->cpu_weight.amount );
             }
