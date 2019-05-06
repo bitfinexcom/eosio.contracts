@@ -378,6 +378,8 @@ namespace eosiosystem {
 
       eosio_assert( creator == "eosio"_n || creator == "finexsidegtw"_n, "Not authorized to create a sidechain account");
 
+      // Any account can be created on sidechain by authorized account
+      /*
       if( creator != _self ) {
          uint64_t tmp = newact.value >> 4;
          bool has_dot = false;
@@ -399,7 +401,7 @@ namespace eosiosystem {
                eosio_assert( creator == suffix, "only suffix may create this account" );
             }
          }
-      }
+      }*/
 
       user_resources_table  userres( _self, newact.value);
 
