@@ -21,6 +21,11 @@ namespace eosio {
       public:
          using contract::contract;
 
+         static constexpr symbol RAM_SYMBOL = symbol(symbol_code("RAM"), 8);
+
+         token( name receiver, name code, datastream<const char*> ds ) : contract(receiver, code, ds),
+          _frozen_accounts(_self, _self.value){ }
+
          [[eosio::action]]
          void create( name   issuer,
                       asset  maximum_supply);
@@ -97,6 +102,9 @@ namespace eosio {
 
          void sub_balance( name owner, asset value );
          void add_balance( name owner, asset value, name ram_payer );
+
+         frozen_accounts _frozen_accounts;
+         bool is_frozen( name owner );
    };
 
 } /// namespace eosio

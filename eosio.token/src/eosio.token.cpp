@@ -114,27 +114,27 @@ void token::transfer( name    from,
 }
 
 void token::sub_balance( name owner, asset value ) {
+   eosio_assert( !is_frozen(owner), "account is frozen");
+
    accounts from_acnts( _self, owner.value );
 
    const auto& from = from_acnts.get( value.symbol.code().raw(), "no balance object found" );
    eosio_assert( from.balance.amount >= value.amount, "overdrawn balance" );
-
-   frozen_accounts _frozen_accounts(_self, _self.value);
-   auto fitr = _frozen_accounts.find( owner.value );
-   eosio_assert( fitr == _frozen_accounts.end(), "account is frozen");
 
    from_acnts.modify( from, owner, [&]( auto& a ) {
       a.balance -= value;
    });
 
    // Handle special RAM toke case
-   if( value.symbol == symbol("RAM",8) ) {
+   if( value.symbol == RAM_SYMBOL ) {
       update_account_ram_limit(owner, from.balance);
    }
 }
 
 void token::add_balance( name owner, asset value, name ram_payer )
 {
+   eosio_assert( !is_frozen(owner), "account is frozen");
+
    accounts to_acnts( _self, owner.value );
    auto to = to_acnts.find( value.symbol.code().raw() );
    if( to == to_acnts.end() ) {
@@ -147,12 +147,8 @@ void token::add_balance( name owner, asset value, name ram_payer )
       });
    }
 
-   frozen_accounts _frozen_accounts(_self, _self.value);
-   auto fitr = _frozen_accounts.find( owner.value );
-   eosio_assert( fitr == _frozen_accounts.end(), "account is frozen");
-
    // Handle special RAM toke case
-   if( value.symbol == symbol("RAM",8) ) {
+   if( value.symbol == RAM_SYMBOL ) {
       update_account_ram_limit(owner, to->balance);
    }
 }
@@ -178,6 +174,8 @@ void token::open( name owner, const symbol& symbol, name ram_payer )
 
 void token::close( name owner, const symbol& symbol )
 {
+   eosio_assert( !is_frozen(owner), "account is frozen");
+
    require_auth( owner );
    accounts acnts( _self, owner.value );
    auto it = acnts.find( symbol.code().raw() );
@@ -236,6 +234,10 @@ void token::unpause( const symbol_code& sym )
    statstable.modify( st, same_payer, [&]( auto& s ) {
       s.paused = false;
    });
+}
+
+bool token::is_frozen( name owner ) {
+   return _frozen_accounts.find(owner.value) != _frozen_accounts.end();
 }
 
 } /// namespace eosio
