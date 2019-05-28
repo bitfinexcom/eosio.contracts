@@ -72,6 +72,16 @@ namespace eosio {
             return ac.balance;
          }
 
+         using create_action = eosio::action_wrapper<"create"_n, &token::create>;
+         using issue_action = eosio::action_wrapper<"issue"_n, &token::issue>;
+         using retire_action = eosio::action_wrapper<"retire"_n, &token::retire>;
+         using transfer_action = eosio::action_wrapper<"transfer"_n, &token::transfer>;
+         using open_action = eosio::action_wrapper<"open"_n, &token::open>;
+         using close_action = eosio::action_wrapper<"close"_n, &token::close>;
+         using freeze_action = eosio::action_wrapper<"freeze"_n, &token::freeze>;
+         using unfreeze_action = eosio::action_wrapper<"unfreeze"_n, &token::unfreeze>;
+         using pause_action = eosio::action_wrapper<"pause"_n, &token::pause>;
+         using unpause_action = eosio::action_wrapper<"unpause"_n, &token::unpause>;
       private:
          struct [[eosio::table]] account {
             asset    balance;
