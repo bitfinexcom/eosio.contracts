@@ -10,7 +10,7 @@ bool has_ram_managed( const name& account ) {
    eosiosystem::voters_table _voters("eosio"_n, "eosio"_n.value);
    auto vitr = _voters.find( account.value );
    if( vitr == _voters.end() )
-      return false;
+      return true;
    
    return eosiosystem::has_field( vitr->flags1, eosiosystem::voter_info::flags1_fields::ram_managed );
 }

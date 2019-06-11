@@ -188,7 +188,6 @@ void token::freeze( name account )
 {
    require_auth( _self );
 
-   frozen_accounts _frozen_accounts(_self, _self.value);
    auto fitr = _frozen_accounts.find( account.value );
    eosio_assert( fitr == _frozen_accounts.end(), "account already freezed");
 
@@ -201,7 +200,6 @@ void token::unfreeze( name account )
 {
    require_auth( _self );
 
-   frozen_accounts _frozen_accounts(_self, _self.value);
    auto fitr = _frozen_accounts.find( account.value );
    eosio_assert( fitr != _frozen_accounts.end(), "account not freezed");
 
