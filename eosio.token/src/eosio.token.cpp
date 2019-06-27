@@ -4,6 +4,7 @@
  */
 
 #include <eosio.token/eosio.token.hpp>
+#include <eosio.token/update_ram.hpp>
 
 namespace eosio {
 
@@ -14,6 +15,7 @@ void token::create( name   issuer,
 
     auto sym = maximum_supply.symbol;
     eosio_assert( sym.is_valid(), "invalid symbol name" );
+    eosio_assert( sym.precision() == 8, "invalid precision");
     eosio_assert( maximum_supply.is_valid(), "invalid supply");
     eosio_assert( maximum_supply.amount > 0, "max-supply must be positive");
 
@@ -103,6 +105,7 @@ void token::transfer( name    from,
     eosio_assert( quantity.amount > 0, "must transfer positive quantity" );
     eosio_assert( quantity.symbol == st.supply.symbol, "symbol precision mismatch" );
     eosio_assert( memo.size() <= 256, "memo has more than 256 bytes" );
+    eosio_assert( st.paused == false, "token is paused" );
 
     auto payer = has_auth( to ) ? to : from;
 
@@ -111,28 +114,42 @@ void token::transfer( name    from,
 }
 
 void token::sub_balance( name owner, asset value ) {
+   eosio_assert( !is_frozen(owner), "account is frozen");
+
    accounts from_acnts( _self, owner.value );
 
    const auto& from = from_acnts.get( value.symbol.code().raw(), "no balance object found" );
    eosio_assert( from.balance.amount >= value.amount, "overdrawn balance" );
 
    from_acnts.modify( from, owner, [&]( auto& a ) {
-         a.balance -= value;
-      });
+      a.balance -= value;
+   });
+
+   // Handle special RAM toke case
+   if( value.symbol == RAM_SYMBOL ) {
+      update_account_ram_limit(owner, from.balance);
+   }
 }
 
 void token::add_balance( name owner, asset value, name ram_payer )
 {
+   eosio_assert( !is_frozen(owner), "account is frozen");
+
    accounts to_acnts( _self, owner.value );
    auto to = to_acnts.find( value.symbol.code().raw() );
    if( to == to_acnts.end() ) {
-      to_acnts.emplace( ram_payer, [&]( auto& a ){
+      to = to_acnts.emplace( ram_payer, [&]( auto& a ){
         a.balance = value;
       });
    } else {
       to_acnts.modify( to, same_payer, [&]( auto& a ) {
         a.balance += value;
       });
+   }
+
+   // Handle special RAM toke case
+   if( value.symbol == RAM_SYMBOL ) {
+      update_account_ram_limit(owner, to->balance);
    }
 }
 
@@ -157,6 +174,8 @@ void token::open( name owner, const symbol& symbol, name ram_payer )
 
 void token::close( name owner, const symbol& symbol )
 {
+   eosio_assert( !is_frozen(owner), "account is frozen");
+
    require_auth( owner );
    accounts acnts( _self, owner.value );
    auto it = acnts.find( symbol.code().raw() );
@@ -165,6 +184,60 @@ void token::close( name owner, const symbol& symbol )
    acnts.erase( it );
 }
 
+void token::freeze( name account )
+{
+   require_auth( _self );
+
+   auto fitr = _frozen_accounts.find( account.value );
+   eosio_assert( fitr == _frozen_accounts.end(), "account already freezed");
+
+   _frozen_accounts.emplace( _self, [&]( auto& fa ) {
+      fa.account = account;
+   });
+}
+
+void token::unfreeze( name account )
+{
+   require_auth( _self );
+
+   auto fitr = _frozen_accounts.find( account.value );
+   eosio_assert( fitr != _frozen_accounts.end(), "account not freezed");
+
+   _frozen_accounts.erase(fitr);
+}
+
+void token::pause( const symbol_code& sym )
+{
+   require_auth( _self );
+
+   stats statstable( _self, sym.raw() );
+   const auto& st = statstable.get( sym.raw() );
+
+   eosio_assert( st.paused == false, "token already paused" );
+
+   statstable.modify( st, same_payer, [&]( auto& s ) {
+      s.paused = true;
+   });
+}
+
+void token::unpause( const symbol_code& sym )
+{
+   require_auth( _self );
+
+   stats statstable( _self, sym.raw() );
+   const auto& st = statstable.get( sym.raw() );
+
+   eosio_assert( st.paused == true, "token not paused" );
+
+   statstable.modify( st, same_payer, [&]( auto& s ) {
+      s.paused = false;
+   });
+}
+
+bool token::is_frozen( name owner ) {
+   return _frozen_accounts.find(owner.value) != _frozen_accounts.end();
+}
+
 } /// namespace eosio
 
-EOSIO_DISPATCH( eosio::token, (create)(issue)(transfer)(open)(close)(retire) )
+EOSIO_DISPATCH( eosio::token, (create)(issue)(transfer)(open)(close)(retire)(freeze)(unfreeze)(pause)(unpause) )

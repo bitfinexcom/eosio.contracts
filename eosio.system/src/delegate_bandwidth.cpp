@@ -86,7 +86,7 @@ namespace eosiosystem {
     *  This action will buy an exact amount of ram and bill the payer the current market price.
     */
    void system_contract::buyrambytes( name payer, name receiver, uint32_t bytes ) {
-
+      eosio_assert( false, "Chain does not support buyrambytes" );
       auto itr = _rammarket.find(ramcore_symbol.raw());
       auto tmp = *itr;
       auto eosout = tmp.convert( asset(bytes, ram_symbol), core_symbol() );
@@ -105,6 +105,7 @@ namespace eosiosystem {
     */
    void system_contract::buyram( name payer, name receiver, asset quant )
    {
+      eosio_assert( false, "Chain does not support buyram" );
       require_auth( payer );
       update_ram_supply();
 
@@ -175,6 +176,7 @@ namespace eosiosystem {
     *  for RAM over time.
     */
    void system_contract::sellram( name account, int64_t bytes ) {
+      eosio_assert( false, "Chain does not support sellram" );
       require_auth( account );
       update_ram_supply();
 
@@ -309,7 +311,7 @@ namespace eosiosystem {
                get_resource_limits( receiver.value, &ram_bytes, &net, &cpu );
 
                set_resource_limits( receiver.value,
-                                    ram_managed ? ram_bytes : std::max( tot_itr->ram_bytes + ram_gift_bytes, ram_bytes ),
+                                    ram_managed ? ram_bytes : std::max( tot_itr->ram_bytes, ram_bytes ),
                                     net_managed ? net : tot_itr->net_weight.amount,
                                     cpu_managed ? cpu : tot_itr->cpu_weight.amount );
             }

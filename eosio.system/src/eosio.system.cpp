@@ -1,4 +1,7 @@
 #include <eosio.system/eosio.system.hpp>
+#include <eosio.token/eosio.token.hpp>
+#include <eosio.token/update_ram.hpp>
+
 #include <eosiolib/dispatcher.hpp>
 #include <eosiolib/crypto.h>
 
@@ -55,6 +58,7 @@ namespace eosiosystem {
    }
 
    void system_contract::setram( uint64_t max_ram_size ) {
+      eosio_assert( false, "Chain does not support setram" );
       require_auth( _self );
 
       eosio_assert( _gstate.max_ram_size < max_ram_size, "ram may only be increased" ); /// decreasing ram might result market maker issues
@@ -100,6 +104,7 @@ namespace eosiosystem {
     *  be allocated at the old rate up to the present block before switching the rate.
     */
    void system_contract::setramrate( uint16_t bytes_per_block ) {
+      eosio_assert( false, "Chain does not support setramrate" );
       require_auth( _self );
 
       update_ram_supply();
@@ -149,13 +154,8 @@ namespace eosiosystem {
          eosio_assert( vitr != _voters.end() && has_field( vitr->flags1, voter_info::flags1_fields::ram_managed ),
                        "RAM of account is already unmanaged" );
 
-         user_resources_table userres( _self, account.value );
-         auto ritr = userres.find( account.value );
-
-         ram = ram_gift_bytes;
-         if( ritr != userres.end() ) {
-            ram += ritr->ram_bytes;
-         }
+         auto ram_balance = eosio::token::get_balance("eosio.token"_n, account, symbol_code("RAM"));
+         ram = ram_balance_to_bytes(ram_balance);
 
          _voters.modify( vitr, same_payer, [&]( auto& v ) {
             v.flags1 = set_field( v.flags1, voter_info::flags1_fields::ram_managed, false );
