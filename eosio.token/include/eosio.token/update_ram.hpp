@@ -19,7 +19,7 @@ int64_t ram_balance_to_bytes(const asset& ram_balance) {
 
    uint128_t new_ram_bytes = uint128_t(ram_balance.amount);
    
-   new_ram_bytes *= uint128_t(1024);      //1 RAM token represents 1Kb of RAM
+   new_ram_bytes *= uint128_t(1000);      //1 RAM token represents 1000 bytes of RAM
    new_ram_bytes += uint128_t(49999999);  //round up any value > 0.5 bytes to 1 byte
    new_ram_bytes /= uint128_t(100000000); //divide by the precision of RAM token (8)
    
